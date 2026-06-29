@@ -4,7 +4,7 @@ const path   = require("path");
 const crypto = require("crypto");
 
 const PORT        = Number(process.env.PORT || 3000);
-const HOST        = process.env.HOST || "127.0.0.1";
+const HOST = process.env.HOST || "0.0.0.0";
 const PUBLIC_DIR  = path.join(__dirname, "public");
 const DATA_FILE   = path.join(__dirname, "data", "events.json");
 const SEED_FILE   = path.join(__dirname, "data", "events.seed.json");
