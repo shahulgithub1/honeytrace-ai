@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>HoneyTrace AI</title>
+  <link rel="stylesheet" href="/styles.css"/>
+</head>
+<body>
+<div class="shell">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="brand">
+      <img src="/mark.svg" class="brand-logo" alt=""/>
+      <div><div class="brand-name">HoneyTrace AI</div><div class="brand-sub">SSH Threat Monitor</div></div>
+    </div>
+    <nav class="nav">
+      <a class="nav-link active" data-tab="overview">   <i>⊞</i> Overview</a>
+      <a class="nav-link"        data-tab="livefeed">   <i>◉</i> Live Feed</a>
+      <a class="nav-link"        data-tab="worldmap">   <i>◎</i> World Map</a>
+      <a class="nav-link"        data-tab="alerts">     <i>◈</i> Alerts <span class="badge" id="alertBadge" style="display:none">0</span></a>
+      <a class="nav-link"        data-tab="attackers">  <i>◐</i> Attackers</a>
+      <a class="nav-link"        data-tab="killchain">  <i>◇</i> Kill Chain</a>
+      <a class="nav-link"        data-tab="mitre">      <i>◆</i> MITRE ATT&amp;CK</a>
+      <a class="nav-link"        data-tab="iocs">       <i>◉</i> IOCs</a>
+      <a class="nav-link"        data-tab="blocked">    <i>⊗</i> Blocked IPs</a>
+      <a class="nav-link"        data-tab="events">     <i>≡</i> Events</a>
+      <a class="nav-link"        data-tab="import">     <i>⊕</i> Import Logs</a>
+    </nav>
+    <div class="sidebar-bottom">
+      <div class="sensor-status"><span class="pulse-dot"></span><div><b>3 sensors online</b><small>SSH honeypot active</small></div></div>
+      <div class="last-updated" id="lastRefresh">–</div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+
+    <!-- TOP BAR -->
+    <div class="topbar">
+      <div class="topbar-title" id="tabTitle">Overview</div>
+      <div class="topbar-actions">
+        <div class="live-badge hidden" id="liveBar"><span class="pulse-dot small"></span> New data — <button class="ghost-btn" id="refreshBtn">refresh</button></div>
+        <button class="btn btn-primary" id="simulateBtn">+ Simulate</button>
+        <button class="btn btn-ghost"   id="resetBtn">Reset</button>
+        <button class="btn btn-ghost"   id="reportBtn">Report</button>
+        <button class="btn btn-ghost"   id="csvBtn">CSV</button>
+        <button class="btn btn-ghost"   id="pdfBtn">PDF</button>
+      </div>
+    </div>
+
+    <!-- OVERVIEW -->
+    <div class="page active" id="tab-overview">
+      <div class="hero">
+        <div class="hero-text">
+          <div class="eyebrow">AI-Powered Honeypot Dashboard</div>
+          <h1>See exactly what hackers do<br>the moment they attack.</h1>
+          <p class="hero-desc">Real SSH attack logs · Automatic threat profiling · MITRE ATT&CK mapping</p>
+        </div>
+      </div>
+      <div class="stat-row">
+        <div class="stat-card"><div class="stat-label">Total Events</div><div class="stat-value" id="totalEvents">0</div><div class="stat-sub">Captured interactions</div></div>
+        <div class="stat-card"><div class="stat-label">Attackers</div><div class="stat-value" id="uniqueAttackers">0</div><div class="stat-sub">Unique source IPs</div></div>
+        <div class="stat-card danger"><div class="stat-label">Critical</div><div class="stat-value" id="criticalAttackers">0</div><div class="stat-sub">High-risk actors</div></div>
+        <div class="stat-card"><div class="stat-label">Avg Risk</div><div class="stat-value" id="avgRisk">0</div><div class="stat-sub">Out of 100</div></div>
+        <div class="stat-card warn"><div class="stat-label">Alerts</div><div class="stat-value" id="totalAlerts">0</div><div class="stat-sub">Need attention</div></div>
+        <div class="stat-card"><div class="stat-label">Blocked</div><div class="stat-value" id="totalBlocked">0</div><div class="stat-sub">Manually blocked</div></div>
+      </div>
+      <div class="overview-grid">
+        <div class="card span2">
+          <div class="card-head"><div class="eyebrow">Activity</div><h3>Attack timeline</h3><span id="topTechnique" class="chip amber">–</span></div>
+          <canvas id="timelineChart" width="800" height="200"></canvas>
+        </div>
+        <div class="card">
+          <div class="card-head"><div class="eyebrow">Top Signals</div><h3>Origins &amp; Usernames</h3></div>
+          <div id="signalBars"></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><div class="eyebrow">Top Attackers</div><h3>By risk score</h3><button class="ghost-btn" id="goAttackers">View all →</button></div>
+          <div id="overviewAttackers"></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><div class="eyebrow">MITRE ATT&amp;CK</div><h3>Top techniques</h3><button class="ghost-btn" id="goMitre">View all →</button></div>
+          <div id="overviewMitre"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LIVE FEED -->
+    <div class="page" id="tab-livefeed">
+      <div class="card">
+        <div class="card-head"><div class="eyebrow">SOC Console</div><h3>Live attack feed</h3><button class="btn btn-ghost" id="refreshFeedBtn">Refresh</button></div>
+        <div id="feedList" class="feed"></div>
+      </div>
+    </div>
+
+    <!-- WORLD MAP -->
+    <div class="page" id="tab-worldmap">
+      <div class="card">
+        <div class="card-head"><div class="eyebrow">Global Threat Intelligence</div><h3>World attack map — click a country dot for details</h3><span id="mapCount" class="chip teal">0</span></div>
+        <div class="map-layout">
+          <div class="map-box"><canvas id="worldMapCanvas" width="960" height="480"></canvas></div>
+          <div class="map-legend"><div class="eyebrow" style="margin-bottom:12px">Attack Origins</div><div id="geoList"></div></div>
+        </div>
+        <div id="countryDetail"></div>
+      </div>
+    </div>
+
+    <!-- ALERTS -->
+    <div class="page" id="tab-alerts">
+      <div class="card">
+        <div class="card-head"><div class="eyebrow">Incident Response</div><h3>Active alerts</h3></div>
+        <div id="alertList"></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><div class="eyebrow">History</div><h3>Acknowledged alerts</h3></div>
+        <div id="ackedList"></div>
+      </div>
+    </div>
+
+    <!-- ATTACKERS -->
+    <div class="page" id="tab-attackers">
+      <div class="card">
+        <div class="card-head"><div class="eyebrow">AI Profiles</div><h3>Attacker leaderboard</h3>
+          <input class="search-input" id="searchInput" type="search" placeholder="Search IP, country, persona…"/>
+        </div>
+        <div id="attackerGrid" class="attacker-grid"></div>
+      </div>
+    </div>
+
+    <!-- KILL CHAIN -->
+    <div class="page" id="tab-killchain">
+      <div class="card">
+        <div class="card-head"><div class="eyebrow">ATT&amp;CK Framework</div><h3>Kill chain — attack progression observed</h3></div>
+        <div id="killChain" class="kill-chain"></div>
+      </div>
+    </div>
+
+    <!-- MITRE -->
+    <div class="page" id="tab-mitre">
+      <div class="card">
+        <div class="card-head"><div class="eyebrow">Technique Frequency</div><h3>MITRE ATT&amp;CK hit count</h3></div>
+        <div id="mitreBar"></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><div class="eyebrow">Coverage</div><h3>ATT&amp;CK heatmap</h3></div>
+        <div id="mitreHeat" class="heat-grid"></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><div class="eyebrow">Kill-Chain Phases</div><h3>Tactic coverage</h3></div>
+        <div id="tacticMatrix"></div>
+      </div>
+    </div>
+
+    <!-- IOCs -->
+    <div class="page" id="tab-iocs">
+      <div class="card">
+        <div class="card-head"><div class="eyebrow">Indicators of Compromise</div><h3>Extracted IOCs</h3><button class="btn btn-ghost" id="copyIOCsBtn">Copy all</button></div>
+        <div id="iocPanel"></div>
+      </div>
+    </div>
+
+    <!-- BLOCKED -->
+    <div class="page" id="tab-blocked">
+      <div class="card">
+        <div class="card-head"><div class="eyebrow">Firewall</div><h3>Blocked IPs</h3></div>
+        <div id="blockedList"></div>
+      </div>
+    </div>
+
+    <!-- EVENTS -->
+    <div class="page" id="tab-events">
+      <div class="card">
+        <div class="card-head"><div class="eyebrow">Raw Data</div><h3>Recent events</h3></div>
+        <div class="table-wrap">
+          <table><thead><tr><th>Time</th><th>IP</th><th>Type</th><th>Credential</th><th>Command</th></tr></thead>
+          <tbody id="eventsBody"></tbody></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- IMPORT -->
+    <div class="page" id="tab-import">
+      <div class="card" style="max-width:640px">
+        <div class="card-head"><div class="eyebrow">Cowrie JSONL</div><h3>Import honeypot logs</h3></div>
+        <p class="text-muted" style="margin-bottom:14px;font-size:.88rem">Paste Cowrie JSONL events below. Each line = one JSON object with <code>src_ip</code>, <code>eventid</code>, and optionally <code>input</code>, <code>username</code>, <code>password</code>.</p>
+        <textarea id="cowrieInput" rows="8" placeholder='{"eventid":"cowrie.command.input","src_ip":"1.2.3.4","username":"root","input":"whoami"}'></textarea>
+        <div class="flex gap" style="margin-top:10px">
+          <button class="btn btn-primary" id="importBtn">Import</button>
+          <button class="btn btn-ghost"   id="clearImport">Clear</button>
+        </div>
+        <div id="importMsg" class="import-msg"></div>
+        <div class="divider"></div>
+        <div class="eyebrow" style="margin-bottom:10px">Or attack from terminal</div>
+        <pre class="code-block">node scripts/attack-simulator.js --scenario full
+node scripts/attack-simulator.js --scenario crypto --country China
+node scripts/attack-simulator.js --scenario bruteforce --ip 1.2.3.4</pre>
+      </div>
+    </div>
+
+  </div><!-- /main -->
+</div><!-- /shell -->
+
+<!-- ATTACKER DRAWER -->
+<div class="overlay hidden" id="overlay"></div>
+<div class="drawer hidden" id="drawer">
+  <div class="drawer-top">
+    <div><div class="eyebrow">Attacker Profile</div><div class="drawer-ip" id="drawerIp">–</div></div>
+    <button class="close-btn" id="closeDrawer">✕</button>
+  </div>
+  <div class="drawer-tabs">
+    <button class="dtab active" data-dtab="profile">Profile</button>
+    <button class="dtab"        data-dtab="session">Session Replay</button>
+    <button class="dtab"        data-dtab="commands">Commands</button>
+  </div>
+  <div class="drawer-body" id="drawerBody"></div>
+</div>
+
+<script src="/worldmap.js"></script>
+<script src="/app.js"></script>
+</body>
+</html>

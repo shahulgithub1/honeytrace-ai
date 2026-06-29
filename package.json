@@ -1,0 +1,15 @@
+{
+  "name": "honeytrace-ai",
+  "version": "2.0.0",
+  "description": "AI honeypot dashboard with attacker profiling, alert triage, IOC extraction, MITRE ATT&CK mapping, and Cowrie log ingestion.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node scripts/test.js",
+    "export:report": "node scripts/export-report.js"
+  },
+  "keywords": ["honeypot", "ai", "mitre-attack", "cowrie", "security-dashboard"],
+  "author": "",
+  "license": "MIT",
+  "engines": { "node": ">=18" }
+}
